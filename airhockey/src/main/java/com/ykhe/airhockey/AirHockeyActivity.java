@@ -19,7 +19,6 @@ public class AirHockeyActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_main);
         glSurfaceView = new GLSurfaceView(this);
         boolean supportsEs2 = checkSupportEs2Version();
         if (supportsEs2){
