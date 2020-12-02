@@ -1,4 +1,4 @@
-#片段着色器
+//片段着色器
 //精度限定　中等精度
 precision mediump float;
 
