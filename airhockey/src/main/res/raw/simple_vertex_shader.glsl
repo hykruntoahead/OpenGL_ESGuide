@@ -9,4 +9,8 @@ attribute vec4 a_Position;
 //着色器主要入口点：他所做的就是把前面定义过的位置复制到制定的输出变量gl_Position
 void main(){
     gl_Position = a_Position;
+    //告诉OpenGL这些点的大小应该是10.
+    //(以gl_Position为中心的四边形,这个四边形每边长度与gl_PointSize相等)
+    //注意:此处不能写成整型10 否则会报错:: S0001: Type mismatch, cannot convert from 'int' to 'float'
+    gl_PointSize = 10.0;
 }
