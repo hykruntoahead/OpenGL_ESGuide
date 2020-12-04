@@ -4,6 +4,8 @@ OpenGL ES　应用开发实践指南Android
 
 学习＜OpenGL ES　应用开发实践指南　Android卷＞（美）KevinBrothaler著
 
+
+
 ## 第1章 准备开始
 
 - 创建GLSurfaceView实例
@@ -14,6 +16,8 @@ OpenGL ES　应用开发实践指南Android
   - onSurfaceCreate
   - onSurfaceChanged
   - onDrawFrame 
+  
+  
   
   
 ## 第2章 定义顶点和着色器
@@ -56,6 +60,8 @@ OpenGL里能绘制的图元:点,直线及三角形
 
 ### OpenGL颜色模型
 OpenGL 使用累加**RGB**颜色模型
+
+
 
 ## 第3章 编译着色器及在屏幕上绘制
 
