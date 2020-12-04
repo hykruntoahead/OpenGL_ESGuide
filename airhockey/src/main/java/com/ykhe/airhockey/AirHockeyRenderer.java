@@ -174,7 +174,6 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 
         // 绘制球桌
-
         // 更新着色器代码中的u_color值.
         // 与属性不同,uniform没有默认值.所以我们提供4个分量(r:1;g:1;b:1;a:1)绘制为白色
         GLES20.glUniform4f(uColorLocation,1.0f,1.0f,1.0f,1.0f);
