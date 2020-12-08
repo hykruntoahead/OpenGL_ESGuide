@@ -43,14 +43,14 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     /**
      * 着色器
      * １．顶点着色器:
-     *     生成每个顶点的最终位置，针对每个定点，都会执行一次，
-     *     一旦位置确定，OpenGL就可把这些可见定点的集合组装成点，直线及三角形
+     * 生成每个顶点的最终位置，针对每个定点，都会执行一次，
+     * 一旦位置确定，OpenGL就可把这些可见定点的集合组装成点，直线及三角形
      * ２. 片段着色器:
-     *      为组成点，直线或者三角形每个片段生成最终的颜色，针对每个片段，它都会执行一次
-     *      一个片段是一个小的，单一颜色的长方形区域，类似于计算机屏幕上的一个像素
+     * 为组成点，直线或者三角形每个片段生成最终的颜色，针对每个片段，它都会执行一次
+     * 一个片段是一个小的，单一颜色的长方形区域，类似于计算机屏幕上的一个像素
      * 一旦最后的颜色生成了，OpenGL就会把它们写到一块称为帧缓冲区的内存块中，
      * 然后，Android会把这个帧缓冲区显示到屏幕上．
-     *
+     * <p>
      * OpenGL　管道概述:
      * 读取顶点数据-->执行顶点着色器-->组装图元-->光栅化图元-->执行片段着色器-->写入帧缓冲区-->显示在屏幕上
      */
@@ -60,23 +60,43 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         /* 定义顶点数据 两个三角形组成１个矩形 */
         //OpenGL 会把屏幕映射到[-1,1]
         float[] tableVerticesWithTriangles = {
-                //三角形1
-                -0.5f, -0.5f,
-                0.5f, 0.5f,
-                -0.5f, 0.5f,
+//                //三角形1
+//                -0.5f, -0.5f,
+//                0.5f, 0.5f,
+//                -0.5f, 0.5f,
+//
+//                //三角形２
+//                -0.5f,-0.5f,
+//                0.5f,-0.5f,
+//                0.5f,0.5f,
 
-                //三角形２
-                -0.5f,-0.5f,
-                0.5f,-0.5f,
-                0.5f,0.5f,
+                /**
+                 * p5----------p4
+                 * |            |
+                 * |            |
+                 * |            |
+                 * |     p1     |
+                 * |            |
+                 * |            |
+                 * |            |
+                 * p2-----------p3
+                 * p6
+                */
+                0, 0,//p1
+                -0.5f, -0.5f,//p2
+                0.5f, -0.5f,//p3
+
+                0.5f, 0.5f,//p4
+                -0.5f, 0.5f,//p5
+                -0.5f, -0.5f,//p6
 
                 //中间线
-                -0.5f,0f,
-                0.5f,0f,
+                -0.5f, 0f,
+                0.5f, 0f,
 
                 //两个木槌
-                0f,-0.25f,
-                0f,0.25f
+                0f, -0.25f,
+                0f, 0.25f
         };
 
         vertexData = ByteBuffer
@@ -102,16 +122,16 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         gl.glClearColor(0f, 0f, 0f, 0f);
 
         //从glsl文件读取着色器代码
-        String vertexShaderSource = TextResourceReader.readTextFileFromResource(context,R.raw.simple_vertex_shader);
-        String fragmentShaderSource = TextResourceReader.readTextFileFromResource(context,R.raw.simple_fragment_shader);
+        String vertexShaderSource = TextResourceReader.readTextFileFromResource(context, R.raw.simple_vertex_shader);
+        String fragmentShaderSource = TextResourceReader.readTextFileFromResource(context, R.raw.simple_fragment_shader);
 
         //编译代码生成&返回着色器句柄
         int vertexShader = ShaderHelper.compileVertexShader(vertexShaderSource);
         int fragmentShader = ShaderHelper.compileFragmentShader(fragmentShaderSource);
         //将定点着色器和片段着色器链接到一起形成OpenGL程序对象&返回程序句柄
-        program = ShaderHelper.linkProgram(vertexShader,fragmentShader);
+        program = ShaderHelper.linkProgram(vertexShader, fragmentShader);
 
-        if (LoggerConfig.ON){
+        if (LoggerConfig.ON) {
             ShaderHelper.validateProgram(program);
         }
 
@@ -119,9 +139,9 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         GLES20.glUseProgram(program);
 
         //获取uniform - u_Color位置(res/raw/simple_fragment_shader.glsl中定义)
-        uColorLocation = GLES20.glGetUniformLocation(program,U_COLOR);
+        uColorLocation = GLES20.glGetUniformLocation(program, U_COLOR);
         //获取attribute - a_Position位置(res/raw/simple_vertex_shader.glsl中定义)
-        aPositionLocation = GLES20.glGetAttribLocation(program,A_POSITION);
+        aPositionLocation = GLES20.glGetAttribLocation(program, A_POSITION);
 
         //保证OpenGL从缓冲区读取时,它会从开头(0)位置开始读取
         vertexData.position(0);
@@ -139,8 +159,8 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
          *                      若没调用vertexData.position(0),它可能尝试读取缓冲区结尾后面的内容
          *                      导致应用崩溃
          */
-        GLES20.glVertexAttribPointer(aPositionLocation,POSITION_COMPONENT_COUNT,GLES20.GL_FLOAT,
-                false,0,vertexData);
+        GLES20.glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GLES20.GL_FLOAT,
+                false, 0, vertexData);
         //使能顶点数组,这样OpenGL就知道去哪里寻找它所需的数据了
         GLES20.glEnableVertexAttribArray(aPositionLocation);
     }
@@ -176,23 +196,24 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         // 绘制球桌
         // 更新着色器代码中的u_color值.
         // 与属性不同,uniform没有默认值.所以我们提供4个分量(r:1;g:1;b:1;a:1)绘制为白色
-        GLES20.glUniform4f(uColorLocation,1.0f,1.0f,1.0f,1.0f);
-        // 绘制2个三角形,从数组0位置开始读取6个顶点
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES,0,6);
+        GLES20.glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+        //绘制一个三角形扇:以第一个顶点作为起始,使用相邻两个顶点创建一个三角形,
+        // 接下来每个顶点都会创建一个三角形,围绕起始的中心点按扇形展开
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 6);
 
         //绘制中间线
         //红色
-        GLES20.glUniform4f(uColorLocation,1.0f,0f,0f,1.0f);
+        GLES20.glUniform4f(uColorLocation, 1.0f, 0f, 0f, 1.0f);
         //从数组6位置开始读取2个顶点 绘制一条线
-        GLES20.glDrawArrays(GLES20.GL_LINES,6,2);
+        GLES20.glDrawArrays(GLES20.GL_LINES, 6, 2);
 
         //把木垂绘制为点 蓝色
-        GLES20.glUniform4f(uColorLocation,0f,0f,1f,1f);
-        gl.glDrawArrays(GL10.GL_POINTS,8,1);
+        GLES20.glUniform4f(uColorLocation, 0f, 0f, 1f, 1f);
+        gl.glDrawArrays(GL10.GL_POINTS, 8, 1);
 
         //把木垂绘制为点 红色
-        GLES20.glUniform4f(uColorLocation,1f,0f,0f,1f);
-        gl.glDrawArrays(GL10.GL_POINTS,9,1);
-         
+        GLES20.glUniform4f(uColorLocation, 1f, 0f, 0f, 1f);
+        gl.glDrawArrays(GL10.GL_POINTS, 9, 1);
+
     }
 }
