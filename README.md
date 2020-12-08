@@ -216,3 +216,6 @@ gl.glDrawArrays(GL10.GL_POINTS,9,1);
 暂需知道:OpenGL吧下,y坐标映射到屏幕 范围均为[-1,1]
 #### 指定点(木槌)大小
 - gl_PointSize = 10.0;(in simple_vertex_shader.glsl)
+
+
+## 第4章 增加颜色和着色

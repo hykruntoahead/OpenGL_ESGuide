@@ -1,12 +1,12 @@
-package com.ykhe.airhockey;
+package com.ykhe.airhockey2;
 
 import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
-import com.ykhe.airhockey.util.LoggerConfig;
-import com.ykhe.airhockey.util.ShaderHelper;
-import com.ykhe.airhockey.util.TextResourceReader;
+import com.ykhe.airhockey2.util.LoggerConfig;
+import com.ykhe.airhockey2.util.ShaderHelper;
+import com.ykhe.airhockey2.util.TextResourceReader;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
