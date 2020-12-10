@@ -333,4 +333,4 @@ GLES20.glEnableVertexAttribArray(aColorLocation);
 ```
 
 #### 更新onDrawFrame
-- glUniform4f()调用
+- 删除glUniform4f()调用
