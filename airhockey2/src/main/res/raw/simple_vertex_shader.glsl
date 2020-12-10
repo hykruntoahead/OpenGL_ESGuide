@@ -6,8 +6,15 @@
 
 //关键字　attribute就是把属性放进着色器的手段
 attribute vec4 a_Position;
-//着色器主要入口点：他所做的就是把前面定义过的位置复制到制定的输出变量gl_Position
+attribute vec4 a_Color;
+//varying -
+//是一个特殊的变量类型,它把给它的那些值进行混合,并把这些混合后的值发送给片段着色器
+varying vec4 v_Color;
+
 void main(){
+    //通过把a_Color赋值给v_Color,来告诉OpenGL我们需要每个片段都接收一个混合后的颜色.
+    v_Color = a_Color;
+
     gl_Position = a_Position;
     //告诉OpenGL这些点的大小应该是10.
     //(以gl_Position为中心的四边形,这个四边形每边长度与gl_PointSize相等)
