@@ -229,3 +229,108 @@ gl.glDrawArrays(GL10.GL_POINTS,9,1);
 // 接下来每个顶点都会创建一个三角形,围绕起始的中心点按扇形展开
 GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 6);
 ```
+
+### 增加一个新的颜色属性
+```
+  /* 定义顶点数据 两个三角形组成１个矩形 */
+        //OpenGL 会把屏幕映射到[-1,1]
+        float[] tableVerticesWithTriangles = {
+                /**
+                 * p5----------p4
+                 * |            |
+                 * |            |
+                 * |            |
+                 * |     p1     |
+                 * |            |
+                 * |            |
+                 * |            |
+                 * p2-----------p3
+                 * p6
+                 *
+                 * x,y,r,g,b
+                */
+                0f,      0f,          1f,1f,1f,//p1 r g b
+
+                -0.5f,-0.5f,        0.7f,0.7f,0.7f,//p2
+                0.5f, -0.5f,        0.7f,0.7f,0.7f,//p3
+
+                0.5f, 0.5f,         0.7f,0.7f,0.7f,//p4
+                -0.5f, 0.5f,        0.7f,0.7f,0.7f,//p5
+                -0.5f, -0.5f,       0.7f,0.7f,0.7f,//p6
+
+                //中间线
+                -0.5f, 0f, 1f,0f,0f,
+                0.5f, 0f,  1f,0f,0f,
+
+                //两个木槌
+                0f, -0.25f, 0f,0f,1f,
+                0f, 0.25f,  1f,0f,0f,
+        };
+```
+#### 给着色器增加颜色属性
+修改 simle_vertex_shader.glsl 更新新的着色器代码
+``` 
+attribute vec4 a_Position;
+attribute vec4 a_Color; 
+varying vec4 v_Color;
+
+void main(){ 
+    v_Color = a_Color;
+
+    gl_Position = a_Position; 
+    gl_PointSize = 10.0;
+}
+```
+- varying:是一个特殊的变量类型,它把给它的那些值进行混合,并把这些混合后的值发送给片段着色器
+把varying 加入片段着色器
+```
+precision mediump float; 
+varying vec4 v_Color;
+void main(){
+    gl_FragColor = v_Color;
+}
+```
+用varying变量v_Color替换了原来代码中的uniform:
+- 如果片段属于一条直线,那么OpenGL就会用构成那条直线的两个顶点计算混合后的颜色;
+- 如果那个片段属于一个三角形,那OpenGL就会用构成那个三角形的三个顶点计算其混合后的颜色.
+
+#### 一个varying如何生成每个片段上混合后的颜色?
+- 沿着一条直线做线性插值(长度比例确定颜色相对权重)
+![](pic/line_blended.png)
+
+- 在一个三角形表面上混合(面积比例确定颜色相对权重)
+![](pic/triangle_blended.png)
+
+
+### 用新的颜色属性渲染
+#### 更新常量
+更新AColor相关常量 及步长stride
+```
+private static final String A_COLOR = "a_Color";
+private static final int COLOR_COMPONENT_COUNT = 3;
+
+private static final int STRIDE = (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
+private int aColorLocation;
+
+```
+#### 更新onSurfaceCreated()
+```
+...
+//获取新的a_Color属性
+aColorLocation = GLES20.glGetAttribLocation(program, A_COLOR);
+...
+//更新glVertexAttribPointer()调用,加入跨距:
+ GLES20.glVertexAttribPointer(aPositionLocation,POSITION_COMPONENT_COUNT,GLES20.GL_FLOAT,
+                false,STRIDE,vertexData);
+ ...
+ 
+ //把顶点数据与着色器中的a_Color关联起来
+vertexData.position(POSITION_COMPONENT_COUNT);
+GLES20.glVertexAttribPointer(aColorLocation,COLOR_COMPONENT_COUNT,GLES20.GL_FLOAT,
+                false,STRIDE,vertexData);
+GLES20.glEnableVertexAttribArray(aColorLocation);
+...
+```
+
+#### 更新onDrawFrame
+- glUniform4f()调用
