@@ -3,6 +3,7 @@ package com.ykhe.airhockey2;
 import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.Log;
 
 import com.ykhe.airhockey2.util.LoggerConfig;
@@ -25,9 +26,12 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private static final String TAG = "AirHockeyRenderer";
+    private static final String U_MATRIX = "u_Matrix";
+    private final float[] projectionMatrix = new float[16];
+    private int uMatrixLocation;
+
     private static final String A_POSITION = "a_Position";
     private int aPositionLocation;
-
     //每个顶点有两个分量　
     private static final int POSITION_COMPONENT_COUNT = 2;
     private final Context context;
@@ -83,20 +87,20 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
                 */
                 0f,      0f,          1f,1f,1f,//p1 r g b
 
-                -0.5f,-0.5f,        0.7f,0.7f,0.7f,//p2
-                0.5f, -0.5f,        0.7f,0.7f,0.7f,//p3
+                -0.5f,-0.8f,        0.7f,0.7f,0.7f,//p2
+                0.5f, -0.8f,        0.7f,0.7f,0.7f,//p3
 
-                0.5f, 0.5f,         0.7f,0.7f,0.7f,//p4
-                -0.5f, 0.5f,        0.7f,0.7f,0.7f,//p5
-                -0.5f, -0.5f,       0.7f,0.7f,0.7f,//p6
+                0.5f, 0.8f,         0.7f,0.7f,0.7f,//p4
+                -0.5f, 0.8f,        0.7f,0.7f,0.7f,//p5
+                -0.5f, -0.8f,       0.7f,0.7f,0.7f,//p6
 
                 //中间线
                 -0.5f, 0f, 1f,0f,0f,
                 0.5f, 0f,  1f,0f,0f,
 
                 //两个木槌
-                0f, -0.25f, 0f,0f,1f,
-                0f, 0.25f,  1f,0f,0f,
+                0f, -0.4f, 0f,0f,1f,
+                0f, 0.4f,  1f,0f,0f,
         };
 
         vertexData = ByteBuffer
@@ -170,6 +174,10 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         GLES20.glVertexAttribPointer(aColorLocation,COLOR_COMPONENT_COUNT,GLES20.GL_FLOAT,
                 false,STRIDE,vertexData);
         GLES20.glEnableVertexAttribArray(aColorLocation);
+
+
+        uMatrixLocation = GLES20.glGetUniformLocation(program,U_MATRIX);
+
     }
 
     /**
@@ -184,6 +192,16 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         //设置视口viewport尺寸
         gl.glViewport(0, 0, width, height);
+
+        final float aspectRatio = width > height ?
+                (float)width/(float)height :
+                (float)height /(float) width;
+        //创建正交投影矩阵
+        if (width > height){
+            Matrix.orthoM(projectionMatrix,0, -aspectRatio,aspectRatio,-1f,1f,-1f,1f);
+        }else {
+            Matrix.orthoM(projectionMatrix,0, -1f,1f,-aspectRatio,aspectRatio,-1f,1f);
+        }
     }
 
     /**
@@ -199,6 +217,8 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         //清空屏幕
         //擦除屏幕上所有颜色，并用之前glClearColor()调用定义的颜色填充整个屏幕
         gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
+        //给着色器传递正交投影矩阵
+        GLES20.glUniformMatrix4fv(uMatrixLocation,1,false,projectionMatrix,0);
 
         // 绘制球桌
         //绘制一个三角形扇:以第一个顶点作为起始,使用相邻两个顶点创建一个三角形,
