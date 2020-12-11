@@ -371,3 +371,85 @@ GLES20.glEnableVertexAttribArray(aColorLocation);
 
 
 ### 定义正交投影
+- orthoM方法会为我们生成一个正交投影
+```
+ orthoM(float[] m, int mOffset,float left, float right, float bottom, float top,float near, float far) 
+```
+- float[] m: 目标i数组,这个数组的长度至少有16个元素,这样它才能存储正交投影矩阵
+- int mOffset: 结果矩阵起始的偏移值
+- float left: x轴的最小范围
+- float right: x轴的最大范围
+- float bottom:  y轴的最小范围
+- float top:  y轴的最大范围
+- float near:  z轴的最小范围
+- float far:  z轴的最大范围
+调用该方法后会产生下面的正交投影矩阵:
+
+![](pic/orthogonal_projection_matrix.png)
+
+- 左手&右手坐标系统
+
+### 加入正交投影
+
+#### 更新着色器
+simple_vertex_shader.glsl:
+```
+// add 1 mat4 - 4x4矩阵
+uniform mat4 u_Matrix; 
+attribute vec4 a_Position;
+attribute vec4 a_Color; 
+varying vec4 v_Color;
+
+void main(){ 
+    v_Color = a_Color;
+    //add 2
+    gl_Position = u_Matrix * a_Position; 
+    gl_PointSize = 10.0;
+}
+```
+#### 添加矩阵数组和一个新的uniform
+
+AirHockeyRenderer :
+```
+ private static final String U_MATRIX = "u_Matrix";
+ private final float[] projectionMatrix = new float[16];
+ private int uMatrixLocation;
+ ...
+ 
+ @Override
+ public void onSurfaceCreated(GL10 gl, EGLConfig config){
+    ...
+    uMatrixLocation = GLES20.glGetUniformLocation(program,U_MATRIX);
+    ...
+ } 
+```
+
+#### 创建正交投影矩阵
+```
+ @Override
+ public void onSurfaceChanged(GL10 gl, int width, int height) {
+        //设置视口viewport尺寸
+        gl.glViewport(0, 0, width, height);
+
+        final float aspectRatio = width > height ?
+                (float)width/(float)height :
+                (float)height /(float) width;
+        //创建正交投影矩阵
+        if (width > height){
+            Matrix.orthoM(projectionMatrix,0, -aspectRatio,aspectRatio,-1f,1f,-1f,1f);
+        }else {
+            Matrix.orthoM(projectionMatrix,0, -1f,1f,-aspectRatio,aspectRatio,-1f,1f);
+        }
+ } 
+```
+
+#### 传递矩阵给着色器
+```
+ @Override
+    public void onDrawFrame(GL10 gl) {
+    ...
+    //给着色器传递正交投影矩阵
+    GLES20.glUniformMatrix4fv(uMatrixLocation,1,false,projectionMatrix,0);
+    ...
+    }
+```
