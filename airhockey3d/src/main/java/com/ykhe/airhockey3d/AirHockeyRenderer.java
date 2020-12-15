@@ -6,7 +6,9 @@ import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
 
+
 import com.ykhe.airhockey3d.util.LoggerConfig;
+import com.ykhe.airhockey3d.util.MatrixHelper;
 import com.ykhe.airhockey3d.util.ShaderHelper;
 import com.ykhe.airhockey3d.util.TextResourceReader;
 
@@ -25,14 +27,18 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private static final String TAG = "AirHockeyRenderer";
+    //模型矩阵
+    public final float[] modelMatrix = new float[16];
+
+
     private static final String U_MATRIX = "u_Matrix";
     private final float[] projectionMatrix = new float[16];
     private int uMatrixLocation;
 
     private static final String A_POSITION = "a_Position";
     private int aPositionLocation;
-    //每个顶点有4分量　x,y,z,w
-    private static final int POSITION_COMPONENT_COUNT = 4;
+    //每个顶点有两个分量　
+    private static final int POSITION_COMPONENT_COUNT = 2;
     private final Context context;
     private int program;
 
@@ -84,22 +90,22 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
                  *
                  * x,y,r,g,b
                 */
-                0f,0f,0f,1.5f,     1f,1f,1f,//p1 r g b
+                0f,      0f,          1f,1f,1f,//p1 r g b
 
-                -0.5f,-0.8f,0f,1f, 0.7f,0.7f,0.7f,//p2
-                0.5f, -0.8f,0f,1f, 0.7f,0.7f,0.7f,//p3
+                -0.5f,-0.8f,        0.7f,0.7f,0.7f,//p2
+                0.5f, -0.8f,        0.7f,0.7f,0.7f,//p3
 
-                0.5f, 0.8f,0f,2f,  0.7f,0.7f,0.7f,//p4
-                -0.5f, 0.8f,0f,2f, 0.7f,0.7f,0.7f,//p5
-                -0.5f, -0.8f,0f,1f, 0.7f,0.7f,0.7f,//p6
+                0.5f, 0.8f,         0.7f,0.7f,0.7f,//p4
+                -0.5f, 0.8f,        0.7f,0.7f,0.7f,//p5
+                -0.5f, -0.8f,       0.7f,0.7f,0.7f,//p6
 
                 //中间线
-                -0.5f, 0f,0f,1.5f, 1f,0f,0f,
-                0.5f, 0f,0f,1.5f,  1f,0f,0f,
+                -0.5f, 0f, 1f,0f,0f,
+                0.5f, 0f,  1f,0f,0f,
 
                 //两个木槌
-                0f, -0.4f,0f,1.25f, 0f,0f,1f,
-                0f, 0.4f,0f,1.75f,  1f,0f,0f,
+                0f, -0.4f, 0f,0f,1f,
+                0f, 0.4f,  1f,0f,0f,
         };
 
         vertexData = ByteBuffer
@@ -192,15 +198,20 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         //设置视口viewport尺寸
         gl.glViewport(0, 0, width, height);
 
-        final float aspectRatio = width > height ?
-                (float)width/(float)height :
-                (float)height /(float) width;
-        //创建正交投影矩阵
-        if (width > height){
-            Matrix.orthoM(projectionMatrix,0, -aspectRatio,aspectRatio,-1f,1f,-1f,1f);
-        }else {
-            Matrix.orthoM(projectionMatrix,0, -1f,1f,-aspectRatio,aspectRatio,-1f,1f);
-        }
+        //用45度的视野,创建透视投影.z值从-1位置开始到-10位置结束
+        MatrixHelper.perspectiveM(projectionMatrix,45,(float)width/(float)height,
+                1f,10f);
+        //把模型矩阵设为单位矩阵
+        Matrix.setIdentityM(modelMatrix,0);
+        // 沿着z轴平移-2. 当吧球桌坐标与这个矩阵坐标相乘时,那些坐标最终会沿着z轴负方向移动2个单位
+        Matrix.translateM(modelMatrix,0,0f,0f,-2f);
+
+        //temp 存储投影矩阵与模型矩阵相乘结果
+        final float[] temp = new float[16];
+        //调用multiplyMM执行矩阵相乘 结果存入temp
+        Matrix.multiplyMM(temp,0,projectionMatrix,0,modelMatrix,0);
+        //将结果存回projectionMatrix
+        System.arraycopy(temp,0,projectionMatrix,0,temp.length);
     }
 
     /**
