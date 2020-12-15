@@ -204,7 +204,11 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         //把模型矩阵设为单位矩阵
         Matrix.setIdentityM(modelMatrix,0);
         // 沿着z轴平移-2. 当吧球桌坐标与这个矩阵坐标相乘时,那些坐标最终会沿着z轴负方向移动2个单位
-        Matrix.translateM(modelMatrix,0,0f,0f,-2f);
+//        Matrix.translateM(modelMatrix,0,0f,0f,-2f);
+
+        //让桌子绕x周旋转60度,造成实际生活中我们站在它面前的效果
+        Matrix.translateM(modelMatrix,0,0f,0f,-2.5f);
+        Matrix.rotateM(modelMatrix,0,-60f,1f,0f,0f);
 
         //temp 存储投影矩阵与模型矩阵相乘结果
         final float[] temp = new float[16];
@@ -212,6 +216,8 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         Matrix.multiplyMM(temp,0,projectionMatrix,0,modelMatrix,0);
         //将结果存回projectionMatrix
         System.arraycopy(temp,0,projectionMatrix,0,temp.length);
+
+
     }
 
     /**
