@@ -1,3 +1,4 @@
+include ':airhockey3d'
 include ':airhockey2'
 include ':airhockey'
 include ':app'
