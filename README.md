@@ -563,3 +563,10 @@ Matrix.multiplyMM(temp,0,projectionMatrix,0,modelMatrix,0);
 System.arraycopy(temp,0,projectionMatrix,0,temp.length);
 ```
 
+### 增加旋转
+```
+//让桌子绕x周旋转60度,造成实际生活中我们站在它面前的效果
+ Matrix.translateM(modelMatrix,0,0f,0f,-2.5f);
+ Matrix.rotateM(modelMatrix,0,-60f,1f,0f,0f);
+```
+
