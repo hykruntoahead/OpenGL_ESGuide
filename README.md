@@ -456,3 +456,110 @@ AirHockeyRenderer :
 
 
 ## 第6章 进入第3维
+
+### 三维的艺术
+- 线性投影: 工作原理是在一个想象中的消失点处把并行线段聚合在一起,从而创建出立体化的幻想.
+
+### 从着色器到屏幕的坐标变换
+
+gs_Position --> 透视除法 --> 归一化设备坐标 --> 视口变换 --> 窗口坐标
+
+#### 裁剪空间
+
+- 裁剪空间背后逻辑非常简单:对于任何给定的位置,它的x,y及z分量都需要在那个位置的-w 和 w 之间. 任何在这个范围之外的事物在屏幕上都是不可见的.
+
+#### 透视除法
+
+- (x,y,z,w) ---> (x/w,y/w,z/w)
+##### 同质化坐标 
+eg:(1,1,1,1) (2,2,2,2) (3,3,3,3) ...这些坐标经过透视除法后,所有这些点都映射到归一化设备坐标中的(1,1,1)
+
+##### 除以w的优势
+- 为什么不简单的除以z而除以w呢? 我们可以把投影的影响与实际的z坐标解藕,以便我们可以在正交投影和透视投影之间切换.保留z分量作为深度缓冲区.
+
+#### 视口变换
+- OpenGL把归一化设备坐标的x和y分量映射到屏幕上的一个区域内,这个区域是操作系统预留出来用于显示的,被称**视口**
+- 这些被映射的坐标被称为**窗口坐标**
+
+### 添加w分量创建三维图
+
+
+### 使用透视投影
+- 视椎体 :简单来说视椎体只是1个立方体,其远端比近端大,从而使其变成一个被截断的金字塔. 两端的大小差别越大,观察的范围越宽.我们能看到的也越多.
+
+- 焦点: 一个视椎体,有一个焦点. 这个焦点可以这样得到,顺着从视椎体较大端向较小端扩展出来的那些直线,一直向前通过较小端直到它们汇聚到一起.
+- 焦点和视锥体小端的距离被称为**焦距**,它影响视锥体小端和大端的比例,及其对应的视野.
+
+### 定义透视投影
+
+#### 对宽高比和视野进行调整
+通用投影矩阵,允许我们调整视野以及屏幕的宽高比:
+
+![](pic/universal_projection_matrix.png)
+
+
+### 在代码里创建投影矩阵
+- Android Matrix类准备了两个方法:frustumM()(有缺陷) ,perspectivrM()(>=Android4.0).
+- 实现投影矩阵:
+airhockey3d/src/main/java/com/ykhe/airhockey3d/util/MatrixHelper.java
+```
+ public static void perspectiveM(float[] m,float yFovInDegrees,float aspect,float n, float f){ 
+        //计算焦距 - 基于在y轴上的视野
+        final float angleInRadians = (float)(yFovInDegrees * Math.PI / 180.0);
+
+        final float a = (float) (1.0 / Math.tan(angleInRadians / 2.0));
+
+        //输出矩阵
+
+        m[0] = a / aspect;
+        m[1] = 0f;
+        m[2] = 0f;
+        m[3] = 0f;
+
+        m[4] = 0f;
+        m[5] = a;
+        m[6] = 0f;
+        m[7] = 0f;
+
+        m[8] = 0f;
+        m[9] = 0f;
+        m[10] = -(f+n)/(f-n);
+        m[11] = -1f;
+
+        m[12] = 0f;
+        m[13] = 0f;
+        m[14] = -(2f*f*n)/(f-n);
+        m[15] = 0f;
+    }
+```
+
+### 开始使用投影矩阵
+airhockey3d/src/main/java/com/ykhe/airhockey3d/AirHockeyRenderer.java : 
+```
+public void onSurfaceChanged(GL10 gl, int width, int height) {
+ ...
+  //用45度的视野,创建透视投影.z值从-1位置开始到-10位置结束
+        MatrixHelper.perspectiveM(projectionMatrix,45,(float)width/(float)height,
+                1f,10f);
+ ...
+}
+```
+
+#### 利用模型矩阵移动物体
+```
+//把模型矩阵设为单位矩阵
+ Matrix.setIdentityM(modelMatrix,0);
+// 沿着z轴平移-2. 当球桌坐标与这个矩阵坐标相乘时,那些坐标最终会沿着z轴负方向移动2个单位 使能显示在屏幕内
+ Matrix.translateM(modelMatrix,0,0f,0f,-2f);
+```
+
+#### 更新代码使用一个矩阵(将模型矩阵和透视投影矩阵相乘)
+```
+//temp 存储投影矩阵与模型矩阵相乘结果
+final float[] temp = new float[16];
+//调用multiplyMM执行矩阵相乘 结果存入temp
+Matrix.multiplyMM(temp,0,projectionMatrix,0,modelMatrix,0);
+//将结果存回projectionMatrix
+System.arraycopy(temp,0,projectionMatrix,0,temp.length);
+```
+
