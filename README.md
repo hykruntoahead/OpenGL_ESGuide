@@ -570,3 +570,6 @@ System.arraycopy(temp,0,projectionMatrix,0,temp.length);
  Matrix.rotateM(modelMatrix,0,-60f,1f,0f,0f);
 ```
 
+
+## 第7章 用纹理增加细节
+
