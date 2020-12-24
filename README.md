@@ -594,7 +594,7 @@ System.arraycopy(temp,0,projectionMatrix,0,temp.length);
 - 第一个任务就是: 把一个图像文件的数据加载到一个OpenGL的纹理之中
 新建类:airhockeytextured/src/main/java/com/ykhe/airhockeytextured/util/TextureHelper.java
 
-`
+```
  //把一个图像文件数据加载到一个OpenGL的纹理之中 返回加载图像后的OpenGL纹理的ID
  public static int loadTexture(Context context,int resourceId){
         final int[] textureObjectIds = new int[1];
@@ -609,11 +609,11 @@ System.arraycopy(temp,0,projectionMatrix,0,temp.length);
         }
         ...
  }
-`
+```
 
 #### 加载位图数据并与纹理绑定
 - 使用Android的API读入图像文件的数据
-`
+```
  public static int loadTexture(Context context,int resourceId){
          ...
         //将图像资源解压缩为一个Android位图
@@ -637,7 +637,7 @@ System.arraycopy(temp,0,projectionMatrix,0,temp.length);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,textureObjectIds[0]);  
         ...
  }
-`
+```
 #### 理解纹理过滤
 当纹理大小被扩大或缩小时,我们还需使用**纹理过滤(texture filtering)** 明确说明会发生什么.  
 当把几个纹理元素挤进一个片段,缩小就发生了;当把一个纹理元素扩展到许多片段,放大就发生了.
@@ -657,19 +657,19 @@ System.arraycopy(temp,0,projectionMatrix,0,temp.length);
 
 #### 设置默认的纹理过滤参数
 TextureHelper:
-`
+```
 loadTexture()-
 
         // GL_TEXTURE_MIN_FILTER :对于缩小的情况,使用三线性过滤(GL_LINEAR_MIPMAP_LINEAR)
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_MIN_FILTER,GLES20.GL_LINEAR_MIPMAP_LINEAR);
         // GL_TEXTURE_MAG_FILTER :对于放大情况,使用双线性过滤(GL_LINEAR)
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_MAG_FILTER,GLES20.GL_LINEAR);
-`
+```
 
 ![](pic//texture_filtering_mode.png)
 
 #### 加载纹理到OpenGL并返回其ID
-`
+```
 //告诉OpenGL读入bitmap定义的位图数据,并把他复制到当前绑定的纹理对象
  GLUtils.texImage2D(GLES20.GL_TEXTURE_2D,0,bitmap,0);
 
@@ -679,14 +679,13 @@ loadTexture()-
 GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
 //解除纹理绑定,避免其他纹理方法调用意外的改变这个纹理
 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,0);
- 
-`
+```
 
 ### 创建新的着色器集合
 
 #### 创建新的定点着色器
  res/raw/texture_vertes_shader.glsl
-`
+```
 //顶点纹理着色器 
 uniform mat4 u_Matrix;
 
@@ -701,12 +700,11 @@ void main(){
     v_TextureCoordinates = a_TextureCoordinates;
     gl_Position = u_Matrix * a_Position;
 }
-`
+```
 
 #### 创建新的片段着色器
  res/raw/texture_fragment_shader.glsl
- `
- 
+ ``` 
 precision mediump float;
 // u_TextureUnit 接受实际的纹理数据
 // sampler2D 指一个二维纹理数据的数组
@@ -720,7 +718,7 @@ void main(){
     gl_FragColor = texture2D(u_TextureUnit,v_TextureCoordinates);
 }
 
-`
+```
 
 ### 为顶点数据创建新的类结构
 
@@ -737,7 +735,7 @@ void main(){
   
 ### 绘制纹理
 #### 初始化变量
-`
+```
 //AirHockeyRenderer
 ...
     @Override
@@ -753,10 +751,10 @@ void main(){
         //加载纹理
         texture = TextureHelper.loadTexture(context,R.drawable.air_hockey_surface);
     }
-`
+```
 
 #### 使用纹理进行绘制
-`
+```
 //AirHockeyRenderer.java
     @Override
     public void onDrawFrame(GL10 gl) {
@@ -775,7 +773,7 @@ void main(){
         mallet.bindData(colorProgram);
         mallet.draw();
     }
-`
+```
 
 ### 小结
 - 纹理不会被直接绘制,它们要被绑定到纹理单元,然后把这些纹理单元传递给着色器
