@@ -681,3 +681,101 @@ GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,0);
  
 `
+
+### 创建新的着色器集合
+
+#### 创建新的定点着色器
+ res/raw/texture_vertes_shader.glsl
+`
+//顶点纹理着色器 
+uniform mat4 u_Matrix;
+
+attribute vec4 a_Position;
+
+//有两个分量 S T 所以用vec2定义
+attribute vec2 a_TextureCoordinates;
+//插值
+varying  vec2 v_TextureCoordinates;
+
+void main(){
+    v_TextureCoordinates = a_TextureCoordinates;
+    gl_Position = u_Matrix * a_Position;
+}
+`
+
+#### 创建新的片段着色器
+ res/raw/texture_fragment_shader.glsl
+ `
+ 
+precision mediump float;
+// u_TextureUnit 接受实际的纹理数据
+// sampler2D 指一个二维纹理数据的数组
+uniform sampler2D u_TextureUnit;
+//纹理坐标
+varying vec2 v_TextureCoordinates;
+
+void main(){
+    //被插值的纹理坐标和纹理数据被传递给着色器函数texture2D(),他会读入纹理中的那个特定坐标出的颜色值,
+    //把结果赋值给gl_FragColor设置片段的颜色
+    gl_FragColor = texture2D(u_TextureUnit,v_TextureCoordinates);
+}
+
+`
+
+### 为顶点数据创建新的类结构
+
+- 将顶点数据分离到不同类中
+  VertexArray.java -- 用来封装存储顶点矩阵的FloatBuffer
+  Table.java      --   桌子
+  Mallet.java     --  木槌
+  
+  
+### 为着色器程序添加类
+  ShaderProgram  -- 着色器程序基类
+  TextureShaderProgram -- 纹理着色器程序
+  ColorShaderProgram --  颜色着色器程序
+  
+### 绘制纹理
+#### 初始化变量
+`
+//AirHockeyRenderer
+...
+    @Override
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        GLES20.glClearColor(0.0f,0.0f,0.0f,0.0f);
+
+        table = new Table();
+        mallet = new Mallet();
+
+        textureProgram = new TextureShaderProgram(context);
+        colorProgram = new ColorShaderProgram(context);
+        
+        //加载纹理
+        texture = TextureHelper.loadTexture(context,R.drawable.air_hockey_surface);
+    }
+`
+
+#### 使用纹理进行绘制
+`
+//AirHockeyRenderer.java
+    @Override
+    public void onDrawFrame(GL10 gl) {
+
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+        //绘制桌子
+        textureProgram.useProgram();
+        textureProgram.setUniforms(projectionMatrix,texture);
+        table.bindData(textureProgram);
+        table.draw();
+
+        //绘制木槌
+        colorProgram.useProgram();
+        colorProgram.setUniforms(projectionMatrix);
+        mallet.bindData(colorProgram);
+        mallet.draw();
+    }
+`
+
+### 小结
+- 纹理不会被直接绘制,它们要被绑定到纹理单元,然后把这些纹理单元传递给着色器
