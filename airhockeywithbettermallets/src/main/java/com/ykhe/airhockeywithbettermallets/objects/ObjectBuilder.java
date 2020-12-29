@@ -14,7 +14,7 @@ import java.util.List;
  * description:物体构建器
  */
 public class ObjectBuilder {
-    static interface DrawCommand{
+    interface DrawCommand{
         void draw();
     }
 
@@ -184,7 +184,7 @@ public class ObjectBuilder {
         drawList.add(new DrawCommand() {
             @Override
             public void draw() {
-                //绘制三角形带
+                //绘制三角形带(GL_TRIANGLE_STRIP)
               GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP,startVertex,numVertices);
             }
         });
