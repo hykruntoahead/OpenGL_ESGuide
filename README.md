@@ -800,4 +800,287 @@ void main(){
 
 ### 添加几何图形的类
 
+-构建冰球: 需要一个三角形扇做顶,一个三角形带做侧面
+-构建冰槌: 需要2个三角形扇,2个三角形带
 
+创建Geometry类(util包下),加入点 Point类:
+```
+  /**
+     * 三维场景中的一个点
+     */
+    public static class Point {
+        public final float x, y, z;
+
+        public Point(float x, float y, float z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+        //沿着y轴平移
+        public Point translateY(float distance) {
+            return new Point(x, y + distance, z);
+        }
+    }
+```
+
+给圆定义,加入Circle类:
+
+```
+//圆形
+    public static class Circle{
+        public final Point center;
+        public final float radius;
+
+        public Circle(Point center,float radius){
+            this.center = center;
+            this.radius = radius;
+        }
+
+        //缩放
+        public Circle scale(float scale){
+            return new Circle(center,radius * scale);
+        }
+    }
+```
+给圆柱体一个定义:,Cylinder类:
+
+```
+ public static class Cylinder{
+        public final Point center;
+        public final float radius;
+        public final float height;
+        
+        //中心,半径,高度
+        public Cylinder(Point center,float radius,float height){
+            this.center = center;
+            this.radius = radius;
+            this.height = height;
+        }
+    }
+```
+
+### 添加物体构建器  
+
+创建:com.ykhe.airhockeywithbettermallets.objects.ObjectBuilder
+- 计算圆柱顶部顶点数量:
+```
+ // 圆柱体顶部顶点数量 --
+    // 顶部是一个用三角形扇构造的圆,有一个顶点在圆心,围着圆的每个点都有一个顶点,
+    // 并且围着圆的地一个顶点要重复两次才能使圆闭合
+    private static int sizeOfCircleInVertices(int numPoints){
+        return 1 + (numPoints +1);
+    }
+
+```
+- 圆柱体侧面顶点数量:
+```
+
+    // 圆柱体侧面顶点的数量
+    // 一个圆柱体是一个卷起来的长方形,由三角形带构造,围着顶部圆的每个点都需要两个顶点
+    // 且前两个顶点要重复两次才能使这个管闭合
+    private static int sizeOfOpenCylinderInVertices(int numPoints){
+        return (numPoints + 1) *2;
+    }
+
+```
+
+#### 用圆柱体创建冰球
+```
+    //创建冰球
+    static GeneratedData createPuck(Geometry.Cylinder puck,int numPoints){
+        //一个冰球由一个顶部圆和一个圆柱体侧面构成,所以所有顶点数量为它们之和
+        int size = sizeOfCircleInVertices(numPoints)
+                + sizeOfOpenCylinderInVertices(numPoints);
+
+        ObjectBuilder builder = new ObjectBuilder(size);
+
+        //1.圆形顶部需要被放在冰球的顶部 所以为圆心为圆柱中心点向上移动1/2个高度
+        Geometry.Circle puckTop = new Geometry.Circle(
+                puck.center.translateY(puck.height/2f),
+                puck.radius);
+
+        builder.appendCircle(puckTop,numPoints);
+        builder.appendOpenCylinder(puck,numPoints);
+
+        return builder.build();
+    }
+
+```
+代码中的1 图示:
+
+![](pic/puck_senter_y.png)
+
+#### 用三角形扇构造圆
+```
+  private void appendCircle(Geometry.Circle circle,int numPoints){ 
+        //三角形扇的中心点
+        vertexData[offset++] = circle.center.x;
+        vertexData[offset++] = circle.center.y;
+        vertexData[offset++] = circle.center.z;
+
+        //2.围绕circle.center定义的圆心点按扇形展开,并把第一个点绕圆周重复两次考虑在内.
+
+        for (int i = 0; i <= numPoints; i++) {
+            float angleInRadians = ((float) i / (float) numPoints)
+                    * ((float) Math.PI * 2f);
+
+
+            vertexData[offset++] = circle.center.x +
+                    circle.radius * (float) Math.cos(angleInRadians);
+            vertexData[offset++] = circle.center.y;
+            vertexData[offset++] = circle.center.z +
+            +circle.radius * (float) Math.sin(angleInRadians);
+        } 
+
+    }
+
+```
+代码注释2 图示:
+
+![](pic/unit_circle.png)
+
+#### 为三角形扇添加一个绘画命令
+
+创建一个接口表示单个绘画命令:
+```
+ interface DrawCommand{
+        void draw();
+ }
+```
+保存绘画命令:
+```
+ private final List<DrawCommand> drawList = new ArrayList<DrawCommand>();
+```
+为三角形扇添加绘画命令(appendCircle() 顶部修改代码):
+```
+   final int startVertex = offset / FLOATS_PRE_VERTEX;
+   final int numVertices = sizeOfCircleInVertices(numPoints);
+
+```
+appendCircle() 底部:
+```
+drawList.add(new DrawCommand() {
+            @Override
+            public void draw() {
+                GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN,startVertex,numVertices);
+            }
+ });
+```
+
+#### 用三角形带构造圆柱体侧面
+
+用三角形构造这个冰球侧面:
+```
+  private void appendOpenCylinder(Geometry.Cylinder cylinder,int numPoints){
+        final int startVertex = offset / FLOATS_PRE_VERTEX;
+        final int numVertices = sizeOfOpenCylinderInVertices(numPoints);
+
+        final float yStart = cylinder.center.y - (cylinder.height/2);
+        final float yEnd = cylinder.center.y + (cylinder.height/2);
+
+        //3. 生成三角形带
+        /**
+         *  p1       p3
+         *  | \      |
+         *  |  \     |
+         *  |    \   |
+         *  |      \ |
+         *  p2 ----- p4
+         */
+        for (int i = 0; i <= numPoints; i++) {
+            float angleInRadians = ((float) i / (float) numPoints)
+                    * ((float) Math.PI * 2f);
+
+            float xPosition = cylinder.center.x
+                    +cylinder.radius * (float)Math.cos(angleInRadians);
+            float zPosition = cylinder.center.z
+                    + cylinder.radius * (float) Math.sin(angleInRadians);
+
+            vertexData[offset++] = xPosition;
+            vertexData[offset++] = yStart;
+            vertexData[offset++] = zPosition;
+
+            vertexData[offset++] = xPosition;
+            vertexData[offset++] = yEnd;
+            vertexData[offset++] = zPosition;
+        }
+
+        drawList.add(new DrawCommand() {
+            @Override
+            public void draw() {
+                //绘制三角形带
+              GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP,startVertex,numVertices);
+            }
+        });
+    }
+```
+代码中注释3图示:
+
+![](pic/cyclinder_c.png)
+
+#### 返回生成的数据
+返回对象内部生成的数据(GeneratedData):
+```
+ static class GeneratedData{
+        final float[] vertexData;
+        final List<DrawCommand> drawList;
+
+        GeneratedData(float[] vertexData,List<DrawCommand> drawList){
+            this.vertexData = vertexData;
+            this.drawList = drawList;
+        }
+    }
+```
+定义build()方法:
+```
+  private GeneratedData build(){
+        return new GeneratedData(vertexData,drawList);
+    }
+```
+
+#### 用两个圆柱体构造一个木槌
+木槌定义:
+
+![](pic/mallet_define.png)
+ObjectBuilder中实现createMallet()以创建木槌:
+
+```
+    /**
+     * 底部一个大低圆柱状底盘
+     * 上面一个小高圆柱状手柄
+     */
+    static GeneratedData createMallet(Geometry.Point center,float radius,
+                                      float height,int numPoints){
+        int size = sizeOfCircleInVertices(numPoints) *2 +
+                sizeOfOpenCylinderInVertices(numPoints) *2;
+
+        ObjectBuilder builder = new ObjectBuilder(size);
+
+        float baseHeight = height * 0.25f;
+
+        Geometry.Circle baseCircle = new Geometry.Circle(
+                center.translateY(-baseHeight),
+                radius);
+
+        Geometry.Cylinder baseCylinder = new Geometry.Cylinder(
+                baseCircle.center.translateY(-baseHeight /2f),
+                radius,baseHeight);
+
+        builder.appendCircle(baseCircle,numPoints);
+        builder.appendOpenCylinder(baseCylinder,numPoints);
+
+        float handleHeight = height * 0.75f;
+        float handleRadius = radius/3f;
+
+        Geometry.Circle handleCircle = new Geometry.Circle(center.translateY(height*0.5f),
+                handleRadius);
+        Geometry.Cylinder handleCylinder = new Geometry.Cylinder(
+                handleCircle.center.translateY(-handleHeight/2f),
+                handleRadius,handleHeight);
+
+        builder.appendCircle(handleCircle,numPoints);
+        builder.appendOpenCylinder(handleCylinder,numPoints);
+
+        return builder.build();
+    }
+```
