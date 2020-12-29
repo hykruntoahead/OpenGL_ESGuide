@@ -1084,3 +1084,142 @@ ObjectBuilder中实现createMallet()以创建木槌:
         return builder.build();
     }
 ```
+
+
+### 更新物体
+添加Puck类:
+ com.ykhe.airhockeywithbettermallets.objects.Puck
+ ```
+ public class Puck {
+    public static final int POSITION_COMPONENT_COUNT = 3;
+
+    public final float radius,height;
+
+    private final VertexArray vertexArray;
+    private final List<ObjectBuilder.DrawCommand> drawList;
+
+    public Puck(float radius, float height,int numPointsAroundPuck) {
+        this.radius = radius;
+        this.height = height;
+        ObjectBuilder.GeneratedData generatedData = ObjectBuilder
+                .createPuck(new Geometry.Cylinder(
+                        new Geometry.Point(0f,0f,0f),radius,height)
+                        ,numPointsAroundPuck);
+
+        vertexArray = new VertexArray(generatedData.vertexData);
+        drawList = generatedData.drawList;
+
+    }
+
+    public void bindData(ColorShaderProgram colorShaderProgram){
+        vertexArray.setVertexAttribPointer(0,
+                colorShaderProgram.getPositionAttributeLocation(),
+                POSITION_COMPONENT_COUNT,0);
+    }
+
+    public void draw(){
+        for (ObjectBuilder.DrawCommand drawCommand : drawList) {
+            drawCommand.draw();
+        }
+    }
+}
+ ```
+
+修改Mallet类:
+com.ykhe.airhockeywithbettermallets.objects.Mallet
+```
+public class Mallet {
+    public static final int POSITION_COMPONENT_COUNT = 3;
+
+    private static final int FLOATS_PRE_VERTEX = 3;
+
+    public final float radius,height;
+
+
+    private final VertexArray vertexArray;
+    private final List<ObjectBuilder.DrawCommand> drawList;
+
+    public Mallet(float radius,float height,int numPointsAroundMallet){
+        ObjectBuilder.GeneratedData generatedData = ObjectBuilder.createMallet(
+                new Geometry.Point(0f,0f,0f),radius,height,numPointsAroundMallet);
+        this.radius = radius;
+        this.height = height;
+
+        vertexArray = new VertexArray(generatedData.vertexData);
+        drawList = generatedData.drawList;
+    }
+
+    public void bindData(ColorShaderProgram colorProgram){
+        vertexArray.setVertexAttribPointer(0,colorProgram.getPositionAttributeLocation(),
+                POSITION_COMPONENT_COUNT,0);
+    }
+
+    public void draw(){
+       for (ObjectBuilder.DrawCommand drawCommand:drawList){
+           drawCommand.draw();
+       }
+    }
+}
+```
+
+### 更新着色器
+- 更新颜色着色器 
+ShaderProgram 加入:
+```
+  protected static final String U_COLOR = "u_Color";
+```
+- 更新ColorShaderProgram :
+ ```
+ public class ColorShaderProgram extends ShaderProgram{
+    //uniform locations
+    private final int uMatrixLocation;
+
+    //attribute location
+    private final int aPositionLocation;
+    private final int uColorLocation;
+
+    public ColorShaderProgram(Context context) {
+        super(context, R.raw.simple_vertex_shader,
+                R.raw.simple_fragment_shader);
+
+        uMatrixLocation = GLES20.glGetUniformLocation(program,U_MATRIX);
+
+        aPositionLocation = GLES20.glGetAttribLocation(program,A_POSITION);
+
+        uColorLocation = GLES20.glGetUniformLocation(program,U_COLOR);
+    }
+
+    public void setUniforms(float[] matrix,float r, float g, float b){
+        GLES20.glUniformMatrix4fv(uMatrixLocation,1,false,matrix,0);
+        GLES20.glUniform4f(uColorLocation,r,g,b,1f);
+    }
+
+
+    public int getPositionAttributeLocation(){
+        return aPositionLocation;
+    }  
+}
+ ```
+ - 更新实际着色器
+ simple_vertex_shader.glsl
+ ```
+ uniform mat4 u_Matrix;
+
+ //关键字　attribute就是把属性放进着色器的手段
+ attribute vec4 a_Position;
+
+  void main(){
+    gl_Position = u_Matrix * a_Position;
+  }
+ ```
+ 
+ simple_fragment_shader.glsl
+ ```
+ precision mediump float;
+ uniform vec4 u_Color;
+ void main(){
+    gl_FragColor = u_Color;
+ }
+ ```
+ 
+ 
