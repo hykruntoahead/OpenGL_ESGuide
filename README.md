@@ -1222,4 +1222,34 @@ ShaderProgram 加入:
  }
  ```
  
+ ### 简单的矩阵层次结构
  
+ #### 简单的矩阵层次结构
+ 
+ ###### 三种主要矩阵类型
+ - 模型矩阵
+   是用来把物体放在世界空间坐标的. 如果要把冰球移动到(5,5),我们只需准备一个模型矩阵.
+ 
+ - 视图矩阵
+   是出于同模型矩阵一样的原因被使用的,但它平等地影响场景中的每一个物体.它功能上等同于一个相机.
+   
+ - 投影矩阵
+   这个矩阵帮助创建三维幻象,通常只有当屏幕变换方位时,它才会变化.
+   
+ ###### 一个顶点从它原来位置变换到屏幕
+ - vertex(model)
+   这是模型坐标系中的一个顶点.例如-被包含在桌子顶点内部的位置
+ - vertex(world)
+    在世界空间中用模型矩阵定位过的一个顶点
+ - vertex(eye)
+    这是与我们眼睛或相机相对的一个顶点
+ - vertex(clip)
+    这是被投影矩阵处理过的一个顶点
+ - vertex(ndc)
+     这是归一化设备坐标系中的一个顶点
+     
+###### 链条计算方式:
+vertex(clip) = ProjectionMatrix * vertex(eye)
+vertex(clip) = ProjectionMatrix * ViewMatrix * vertex(world)
+vertex(clip) = ProjectionMatrix * ViewMatrix * ModelMatrix * vertex(model)
+
