@@ -1253,3 +1253,115 @@ vertex(clip) = ProjectionMatrix * vertex(eye)
 vertex(clip) = ProjectionMatrix * ViewMatrix * vertex(world)
 vertex(clip) = ProjectionMatrix * ViewMatrix * ModelMatrix * vertex(model)
 
+#### 给空气曲棍桌子添加新的物体
+AirHockeyRender.java
+- 顶部添加新的矩阵定义:
+```
+    //视图矩阵
+    private final float[] viewMatrix = new float[16];
+    //保存视图矩阵与投影矩阵乘
+    private final float[] viewProjectionMatrix = new float[16];
+    private final float[] modelViewProjectionMatrix = new float[16];
+```
+- 初始化冰球&木槌对象
+```
+   //围着圆的32个点创建
+   mallet = new Mallet(0.08f,0.15f,32);
+   puck = new Puck(0.06f,0.02f,32);
+```
+#### 初始化新矩阵
+
+```
+ @Override
+    public void onSurfaceChanged(GL10 gl, int width, int height) {
+        //设置视口viewport尺寸
+        gl.glViewport(0, 0, width, height);
+
+        //用45度的视野,创建透视投影.z值从-1位置开始到-10位置结束
+        MatrixHelper.perspectiveM(projectionMatrix,45,(float)width/(float)height,
+                1f,10f);
+        /**
+         * float[] rm,       目标数组.该矩阵的长度应该至少容纳16个元素,以便能存储视图矩阵
+         * int rmOffset,     setLookAtM()会把结果从rm的这个偏移值开始存入rm
+         * float eyeX, --
+         * float eyeY,   |-->眼睛所在为位置. 场景中的所有东西看起来都像是从这个点观察它们一样
+         * float eyeZ, --
+         * 将眼睛eye位置设为(0,1.2,2.2):意味着眼睛位于x-z平面的1.2个单位,并向后2.2个单位
+         *
+         * float centerX, --
+         * float centerY,  |--> 这是眼睛正在看的地方;这个位置出现在整个场景的中心
+         * float centerZ, --
+         * 把中心center设为(0,0,0):意味将向下看你前面的原点
+         *
+         * float upX, --
+         * float upY,  |--> 眼睛的朝向,也即可以看做头部指向的地方.upY的值为1意味着头部笔直指向上方
+         * float upZ  --
+         * 把指向up设为(0,1,0):意味着你的头是笔直指向上面的,这个场景不会旋转到任何一边
+         */
+        Matrix.setLookAtM(viewMatrix,0,0f,1.2f,2.2f,
+                 0f,0f,0f,0f,1f,0f);
+
+    }
+```
+
+#### 更新onDrawFrame
+
+```
+   @Override
+    public void onDrawFrame(GL10 gl) {
+
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        //将投影和视图矩阵乘在一起的结果缓存到viewProjectionMatrix.
+        Matrix.multiplyMM(viewProjectionMatrix,0,projectionMatrix,
+                0,viewMatrix,0);
+
+
+        //绘制桌子
+        positionTableInScene();
+        textureProgram.useProgram();
+        textureProgram.setUniforms(modelViewProjectionMatrix,texture);
+        table.bindData(textureProgram);
+        table.draw();
+
+        //绘制木槌1
+        positionObjectInScene(0f,mallet.height / 2f, -0.4f);
+        colorProgram.useProgram();
+        colorProgram.setUniforms(modelViewProjectionMatrix,1f,0f,0f);
+        mallet.bindData(colorProgram);
+        mallet.draw();
+
+        //绘制木槌2
+        positionObjectInScene(0f,mallet.height/2f,0.4f);
+        colorProgram.setUniforms(modelViewProjectionMatrix,0f,0f,1f);
+        mallet.draw();
+
+        //绘制冰球
+        positionObjectInScene(0f,puck.height/2f,0f);
+        colorProgram.setUniforms(modelViewProjectionMatrix,0.8f,0.8f,1f);
+        puck.bindData(colorProgram);
+        puck.draw();
+    }
+
+```
+
+```
+
+    private void positionTableInScene() {
+        //球桌原来是以x,y坐标定义的,因此要使它平放在地上,我们需要让它绕x轴向后旋转90度
+        Matrix.setIdentityM(modelMatrix,0);
+        Matrix.rotateM(modelMatrix,0,-90f,1f,0f,0f);
+        Matrix.multiplyMM(modelViewProjectionMatrix,0,viewProjectionMatrix,0,
+                modelMatrix,0);
+
+    }
+
+```
+
+```
+   private void positionObjectInScene(float x, float y, float z) {
+        Matrix.setIdentityM(modelMatrix,0);
+        Matrix.translateM(modelMatrix,0,x,y,z);
+        Matrix.multiplyMM(modelViewProjectionMatrix,0,viewProjectionMatrix,0,
+                modelMatrix,0);
+    }
+```
