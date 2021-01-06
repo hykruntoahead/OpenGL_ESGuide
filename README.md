@@ -5,6 +5,7 @@ OpenGL ES　应用开发实践指南Android
 学习＜OpenGL ES　应用开发实践指南　Android卷＞（美）KevinBrothaler著
 
 
+# **第一部分** 
 
 ## 第1章 准备开始
 
