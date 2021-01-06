@@ -1,3 +1,4 @@
+include ':airhockeytouch'
 include ':airhockeywithbettermallets'
 include ':airhockeytextured'
 include ':airhockey3d'
