@@ -8,7 +8,6 @@ package com.ykhe.airhockeytouch.util;
  */
 public class Geometry {
 
-
     /**
      * 三维场景中的一个点
      */
@@ -82,6 +81,21 @@ public class Geometry {
                     (z * other.x) - (x * other.z),
                     (x * other.y) - (y * other.x));
         }
+
+        //计算两个向量之间的点积
+        public float dotProduct(Vector other) {
+            return x * other.x
+                    + y * other.y
+                    + z * other.z;
+        }
+
+        //会根据缩放比均匀缩放向量每个分量
+        public Vector scale(float scaleFactor) {
+            return new Vector(
+                    x*scaleFactor,
+                    y * scaleFactor,
+                    z* scaleFactor);
+        }
     }
 
     public static class Ray {
@@ -104,6 +118,18 @@ public class Geometry {
             this.radius = radius;
         }
     }
+
+    public static class Plane{
+        public final Point point;
+        //法向向量
+        public final Vector normal;
+
+        public Plane(Point point, Vector normal) {
+            this.point = point;
+            this.normal = normal;
+        }
+    }
+
 
 
     public static Vector vectorBetween(Point from, Point to) {
@@ -132,4 +158,17 @@ public class Geometry {
 
         return distanceFromPointToRay;
     }
+
+
+
+
+    public static Point intersectionPoint(Ray ray, Plane plane) {
+        Vector rayToPlaneVector = vectorBetween(ray.point , plane.point);
+
+        float scaleFactor = rayToPlaneVector.dotProduct(plane.normal)
+                /ray.vector.dotProduct(plane.normal);
+        Point intersectionPoint = ray.point.translate(ray.vector.scale(scaleFactor));
+        return intersectionPoint;
+    }
+
 }

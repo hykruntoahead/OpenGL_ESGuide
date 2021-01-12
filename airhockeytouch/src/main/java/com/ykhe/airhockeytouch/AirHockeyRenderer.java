@@ -1,6 +1,7 @@
 package com.ykhe.airhockeytouch;
 
 import android.content.Context;
+import android.media.Image;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
@@ -142,7 +143,7 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         mallet.draw();
 
         //绘制木槌2
-        positionObjectInScene(0f, mallet.height / 2f, 0.4f);
+        positionObjectInScene(blueMalletPosition.x, blueMalletPosition.y, blueMalletPosition.z);
         colorProgram.setUniforms(modelViewProjectionMatrix, 0f, 0f, 1f);
         mallet.draw();
 
@@ -228,7 +229,17 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     }
 
     public void handleTouchDrag(float normalizedX, float normalizedY) {
-
+        if (malletPressed){
+            //射线转换
+            Geometry.Ray ray = convertNormalized2DPointToRay(normalizedX,normalizedY);
+            //定义代表我们的曲棍球桌的水平面
+            Geometry.Plane plane = new Geometry
+                    .Plane(new Geometry.Point(0,0,0),new Geometry.Vector(0,1,0));
+            //找出射线与平面相交点 移动木槌至这个点
+            Geometry.Point touchPoint = Geometry.intersectionPoint(ray,plane);
+            blueMalletPosition =
+                    new Geometry.Point(touchPoint.x,mallet.height/2f,touchPoint.z);
+        }
     }
 
 }
